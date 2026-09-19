@@ -1,26 +1,68 @@
 # SOC Detection Engineering Lab
 
-A hands-on cybersecurity portfolio project focused on security monitoring, log analysis, detection engineering, incident investigation, and basic response workflows.
+A hands-on cybersecurity portfolio project focused on security monitoring, authentication analytics, detection engineering, incident investigation, and response workflows.
 
 ## Project Objective
 
 Build a small Security Operations Center (SOC) lab that collects Windows and Linux telemetry, generates realistic security events, detects suspicious behavior, and documents the investigation process.
 
+## Current Milestone
+
+Two authentication detections are now implemented and tested:
+
+1. **Repeated failed logins followed by a successful login**
+   - Counts failed SSH authentication attempts
+   - Detects a later successful login
+   - Extracts the source IP and successful-login username
+
+2. **Password spraying**
+   - Groups failed SSH logins by source IP
+   - Tracks unique usernames targeted
+   - Alerts when one source targets multiple accounts
+   - Maps to **MITRE ATT&CK T1110.003 — Password Spraying**
+
+## Example Detection Output
+
+```text
+ALERT: Possible password spraying detected.
+Source IP: 198.51.100.25
+Unique usernames targeted: 5
+Usernames: admin, edwardjohnson, guest, root, support
+```
+
 ## Skills Demonstrated
 
 - Security monitoring and log analysis
-- Windows Event Logs and Sysmon
-- Linux authentication and system logs
-- SIEM concepts and log ingestion
+- Linux authentication log analysis
 - Detection engineering
 - MITRE ATT&CK mapping
-- Alert triage and incident investigation
-- PowerShell activity analysis
-- Brute-force and suspicious authentication detection
-- Incident documentation
-- Python-based log parsing and enrichment
+- Alert logic and thresholding
+- Authentication attack-pattern analysis
+- False-positive analysis
+- Python log parsing
+- Git/GitHub project workflow
+- Technical documentation
+- SOC triage concepts
 
-## Planned Architecture
+## Lab Environment
+
+Current development environment:
+
+```text
+Mac mini
+   |
+   v
+OrbStack
+   |
+   v
+Ubuntu Lab
+   |
+   +--> Python detection scripts
+   +--> Synthetic authentication logs
+   +--> Git / GitHub
+```
+
+Planned telemetry architecture:
 
 ```text
 Windows Endpoint + Sysmon ----\
@@ -30,15 +72,35 @@ Windows Server ----------------> SIEM / Log Platform ---> Detection Rules ---> A
 Linux Endpoint ---------------/
 ```
 
+## Implemented Files
+
+### Detection 1 — Failed Logins Followed by Success
+
+- `data/sample-logs/auth.log`
+- `scripts/detect_auth_pattern.py`
+- `docs/authentication-detection.md`
+
+### Detection 2 — Password Spraying
+
+- `data/sample-logs/password_spray.log`
+- `scripts/detect_password_spray.py`
+- `docs/password-spray-detection.md`
+- `docs/evidence/password-spray-test.md`
+
 ## Detection Scenarios
 
-1. Repeated failed logins / brute-force behavior
-2. Successful login following repeated failures
-3. Suspicious PowerShell execution
-4. New local administrator account or privileged group membership
-5. Unusual process execution
-6. Linux SSH authentication failures
-7. Security-relevant account changes
+### Implemented
+- Repeated failed SSH logins
+- Successful login after repeated failures
+- Password spraying across multiple usernames
+
+### Planned
+- Suspicious PowerShell execution
+- New local administrator or privileged-group membership
+- Unusual process execution
+- Native Linux SSH telemetry
+- Windows authentication telemetry
+- Security-relevant account changes
 
 ## Investigation Workflow
 
@@ -53,21 +115,31 @@ Linux Endpoint ---------------/
 
 ## Repository Structure
 
-- `docs/` - architecture, workflows, detection notes, and incident documentation
-- `detections/` - detection logic and rule documentation
-- `incidents/` - completed investigation reports
-- `scripts/` - PowerShell and Python utilities
-- `sample-data/` - sanitized sample log data
-- `evidence/` - screenshots and lab evidence
+- `docs/` — detection documentation, evidence, architecture, and workflows
+- `data/sample-logs/` — sanitized synthetic authentication data
+- `scripts/` — Python detection and analysis utilities
+- `detections/` — future SIEM/detection-rule content
+- `incidents/` — future completed investigation reports
+- `evidence/` — future screenshots and visual lab evidence
 
 ## Project Roadmap
 
-See [ROADMAP.md](ROADMAP.md) for the complete implementation plan.
+See [ROADMAP.md](ROADMAP.md) for the full implementation plan.
 
-## Status
+## Current Status
 
-**Phase 0 - Repository and detection planning: Complete**  
-**Phase 1 - Build log collection environment: Next**
+- **Repository and architecture planning:** Complete
+- **Authentication detection prototypes:** 2 working detections
+- **MITRE ATT&CK mapping:** In progress
+- **Native Linux telemetry validation:** Next
+- **Windows/Sysmon telemetry:** Planned
+- **SIEM ingestion:** Planned
+- **Incident investigations:** Planned
+- **Python enrichment/automation:** Planned
+
+## Portfolio Goal
+
+This project is designed to demonstrate practical SOC and detection-engineering skills through working code, reproducible test data, documented detection logic, ATT&CK mapping, and evidence of successful testing.
 
 ## Author
 
