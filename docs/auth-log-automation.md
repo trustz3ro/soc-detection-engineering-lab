@@ -34,6 +34,12 @@ The failed-then-success correlation window can also be changed:
 python3 scripts/analyze_auth_logs.py data/sample-logs/auth.log --success-window-minutes 5
 ```
 
+Source-IP enrichment can be included in the same investigation run:
+
+```bash
+python3 scripts/analyze_auth_logs.py data/sample-logs/auth.log --enrich-sources
+```
+
 ## Fields Extracted
 
 For supported SSH password events, the script extracts:
@@ -58,23 +64,23 @@ The report includes:
 - hosts observed
 - users observed
 - source IP addresses
+- optional source-IP enrichment
 - event timeline
 - investigation indicators
 
-## Enrichment Logic
+## Integrated Enrichment
 
-Source IPs are classified locally without external lookups.
+When `--enrich-sources` is enabled, the analyzer reuses `scripts/enrich_ioc.py` to add source-IP context directly to the authentication report.
 
-Current classifications include:
+The integrated output can include:
 
-- documentation/test ranges
-- RFC1918 private ranges
-- loopback
-- link-local
-- multicast
-- public
+- documentation/test-range identification
+- RFC1918 private-address identification
+- public-address classification
+- reverse-DNS hostname when available
+- analyst-oriented context notes
 
-The lab's synthetic addresses such as `192.0.2.0/24` and `198.51.100.0/24` are explicitly identified as documentation/test ranges.
+This keeps the standalone IOC utility reusable while allowing authentication investigations to perform enrichment in a single command.
 
 ## Investigation Indicators
 
@@ -84,7 +90,7 @@ Triggered when one source IP produces failed authentication attempts against at 
 
 ### Failed-Then-Success Pattern
 
-The analyzer now validates both **event order** and **elapsed time**.
+The analyzer validates both event order and elapsed time.
 
 A failed-then-success indicator is generated only when:
 
@@ -94,33 +100,17 @@ A failed-then-success indicator is generated only when:
 
 The default window is 10 minutes.
 
-The report includes the number of qualifying failures and the elapsed time between the first qualifying failure and the successful login.
+## Assumptions and Limitations
 
-These indicators are triage signals and do not prove malicious activity.
-
-## Assumptions
-
-- the input uses the lab's OpenSSH password-event format
-- syslog timestamps do not include a year, so the analyzer assigns a fixed internal year only for relative event-order calculations
-- the current sample data is expected to belong to a single chronological logging period
-- the script only parses supported `Failed password` and `Accepted password` records
-- public-IP enrichment is classification only; it does not contact reputation services
-
-## Limitations
-
-The current version does not:
-
-- parse every possible OpenSSH message type
-- perform threat-intelligence API lookups
-- infer a real year or timezone from syslog timestamps
-- safely correlate across a Dec. 31 -> Jan. 1 year boundary without additional date context
-- correlate across multiple hosts automatically
-- determine whether a login was truly malicious
-- replace analyst review
+- the input uses the lab's supported OpenSSH password-event format
+- syslog timestamps do not include a year, so a fixed internal year is used only for relative ordering
+- the script does not infer a real year or timezone
+- reverse DNS is point-in-time context and may return no result
+- the script does not perform commercial threat-intelligence lookups
+- enrichment and indicators do not determine maliciousness
+- analyst review remains required
 
 ## SOC Use Case
-
-Instead of manually reading each authentication line, an analyst can run one command and immediately receive:
 
 ```text
 raw authentication logs
@@ -132,13 +122,13 @@ field extraction
 event summary
         |
         v
-source-IP enrichment
+time-window correlation
         |
         v
-time-window correlation
+optional IOC enrichment
         |
         v
 investigation indicators
 ```
 
-This reduces repetitive triage work while keeping the analyst responsible for final interpretation.
+This reduces repetitive triage steps while preserving analyst judgment.
