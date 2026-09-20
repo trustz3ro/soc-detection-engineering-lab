@@ -1,16 +1,16 @@
 # SOC Detection Engineering Lab
 
-A hands-on cybersecurity portfolio project focused on security monitoring, authentication analytics, endpoint telemetry, detection engineering, incident investigation, and response workflows.
+A hands-on cybersecurity portfolio project focused on security monitoring, authentication analytics, endpoint telemetry, detection engineering, incident investigation, automation, enrichment, and response workflows.
 
 ## Project Objective
 
-Build a small Security Operations Center (SOC) lab that collects Windows and Linux telemetry, generates controlled security events, detects suspicious behavior, and documents the investigation process.
+Build a small Security Operations Center (SOC) lab that collects Windows and Linux telemetry, generates controlled security events, detects suspicious behavior, automates repetitive analysis, and documents the investigation process.
 
 ## Current Milestone
 
-**Phase 4 — Incident Investigations: Complete**
+**Phase 5 — Automation and Enrichment: Complete**
 
-The lab now includes validated authentication and endpoint detections plus two complete incident investigations.
+The lab now includes validated authentication and endpoint detections, two complete incident investigations, and Python-based investigation automation.
 
 ### Completed Incident Investigations
 
@@ -40,6 +40,32 @@ The lab now includes validated authentication and endpoint detections plus two c
 - Suspicious Office parent/child process relationship
 - Privileged local Administrators group membership change
 
+## Automation and Enrichment
+
+### Authentication Analyzer
+
+`scripts/analyze_auth_logs.py`
+
+Capabilities:
+- parses supported OpenSSH authentication logs
+- extracts timestamp, host, username, source IP, source port, and event type
+- summarizes failed and successful authentication activity
+- detects password-spray behavior
+- correlates failures followed by success within a configurable time window
+- calculates elapsed time
+- optionally enriches observed source IPs in the same investigation run
+
+### IOC Enrichment Utility
+
+`scripts/enrich_ioc.py`
+
+Capabilities:
+- accepts IPv4, IPv6, and domain indicators
+- classifies documentation/test, RFC1918, loopback, link-local, multicast, unspecified, and public IPs
+- performs reverse DNS for IP addresses when available
+- resolves domains to current IP addresses
+- produces analyst-focused context without assigning malicious/benign verdicts
+
 ## Skills Demonstrated
 
 - Security monitoring and log analysis
@@ -57,7 +83,10 @@ The lab now includes validated authentication and endpoint detections plus two c
 - Timeline construction
 - Scope and severity assessment
 - Disposition and remediation decisions
-- Python log parsing
+- Python log parsing and automation
+- Time-window event correlation
+- IOC enrichment
+- Reverse DNS
 - PowerShell detection scripting
 - Git/GitHub project workflow
 - Technical documentation
@@ -87,16 +116,17 @@ Mac mini
 3. Identify affected user and host
 4. Review surrounding authentication and process activity
 5. Correlate related events
-6. Map behavior to MITRE ATT&CK
-7. Determine scope and severity
-8. Assign a disposition
-9. Document remediation and lessons learned
+6. Enrich relevant indicators
+7. Map behavior to MITRE ATT&CK
+8. Determine scope and severity
+9. Assign a disposition
+10. Document remediation and lessons learned
 
 ## Repository Structure
 
 - `docs/` — detection documentation, learning notes, summaries, and evidence
 - `data/sample-logs/` — sanitized synthetic authentication data
-- `scripts/` — Python and PowerShell detection and investigation utilities
+- `scripts/` — Python and PowerShell detection, investigation, automation, and enrichment utilities
 - `incidents/` — completed incident reports and templates
 - `configs/` — lab configurations such as Sysmon
 - `detections/` — future SIEM/detection-rule content
@@ -112,12 +142,13 @@ Mac mini
 - **Endpoint / process detections:** 3 validated
 - **MITRE ATT&CK mapping:** Documented for current detections
 - **Incident investigations:** 2 complete
-- **Phase 5 automation and enrichment:** Starting
+- **Phase 5 automation and enrichment:** Complete
+- **Phase 6 portfolio polish:** Starting
 - **SIEM ingestion:** Planned
 
 ## Portfolio Goal
 
-This project demonstrates practical SOC and detection-engineering skills through working code, reproducible test data, native Windows and Linux telemetry, documented detection logic, ATT&CK mapping, tuning decisions, event correlation, incident investigation, and validation evidence.
+This project demonstrates practical SOC and detection-engineering skills through working code, reproducible test data, native Windows and Linux telemetry, documented detection logic, ATT&CK mapping, tuning decisions, event correlation, incident investigation, Python automation, and IOC enrichment.
 
 ## Author
 
