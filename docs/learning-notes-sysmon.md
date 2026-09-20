@@ -422,3 +422,62 @@ Analysts should consider:
 - whether the process later connected to the resolved address
 - timing and frequency
 - surrounding endpoint activity
+
+
+## Event ID 22 Follow-Up — Isolating the GitHub DNS Lookup
+
+Filtering Sysmon Event ID 22 by `QueryName: github.com` successfully isolated the DNS activity associated with the earlier PowerShell connectivity test.
+
+Observed PowerShell DNS event:
+
+```text
+Image: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+User: Ed_T14\ej975
+ProcessId: 14480
+QueryName: github.com
+QueryStatus: 0
+QueryResults: ::ffff:140.82.114.4;
+```
+
+The same PowerShell process also resolved other GitHub addresses during the test, including:
+
+```text
+140.82.114.3
+140.82.113.4
+```
+
+This is normal because a hostname may resolve to different addresses over time or across repeated queries.
+
+The filtered results also showed Git's HTTPS helper resolving `github.com`:
+
+```text
+Image: C:\Program Files\Git\mingw64\libexec\git-core\git-remote-https.exe
+QueryName: github.com
+QueryResults: 140.82.112.3;
+```
+
+### Correlation Lesson
+
+The PowerShell Event ID 22 used:
+
+```text
+ProcessGuid: {0c6a6533-257e-6aaf-5e07-000000005e00}
+ProcessId: 14480
+```
+
+The earlier Event ID 3 GitHub HTTPS connection used the same ProcessGuid and ProcessId.
+
+That allows the analyst to correlate:
+
+```text
+PowerShell
+    -> DNS query for github.com
+    -> resolved GitHub IP
+    -> TCP/443 network connection
+```
+
+This is stronger evidence than looking at any one event by itself.
+
+### Important Note
+
+One `github.com` DNS event returned `QueryStatus: 1460` with no result, while other queries from the same process succeeded. A single failed or timed-out lookup should be interpreted in context rather than treated as malicious by itself.
