@@ -7,6 +7,7 @@ import argparse
 import ipaddress
 import re
 from collections import defaultdict
+from datetime import datetime, timedelta
 from pathlib import Path
 
 EVENT_PATTERN = re.compile(
@@ -55,8 +56,13 @@ def classify_ip(value: str) -> str:
     return "public"
 
 
-def parse_log(path: Path) -> list[dict[str, str]]:
-    events: list[dict[str, str]] = []
+def parse_timestamp(value: str) -> datetime:
+    """Parse syslog-style timestamps using a fixed year for relative ordering."""
+    return datetime.strptime(f"2000 {value}", "%Y %b %d %H:%M:%S")
+
+
+def parse_log(path: Path) -> list[dict]:
+    events: list[dict] = []
 
     with path.open("r", encoding="utf-8") as handle:
         for line_number, raw_line in enumerate(handle, start=1):
@@ -67,21 +73,26 @@ def parse_log(path: Path) -> list[dict[str, str]]:
                 continue
 
             item = match.groupdict()
-            item["line_number"] = str(line_number)
+            item["line_number"] = line_number
             item["event_type"] = (
                 "authentication_failure"
                 if item["result"] == "Failed"
                 else "authentication_success"
             )
             item["ip_class"] = classify_ip(item["ip"])
+            item["event_time"] = parse_timestamp(item["timestamp"])
             events.append(item)
 
     return events
 
 
-def analyze(events: list[dict[str, str]], spray_threshold: int) -> dict:
-    failed_by_ip: dict[str, list[dict[str, str]]] = defaultdict(list)
-    success_by_ip: dict[str, list[dict[str, str]]] = defaultdict(list)
+def analyze(
+    events: list[dict],
+    spray_threshold: int,
+    success_window_minutes: int,
+) -> dict:
+    failed_by_ip: dict[str, list[dict]] = defaultdict(list)
+    success_by_ip: dict[str, list[dict]] = defaultdict(list)
 
     for event in events:
         if event["event_type"] == "authentication_failure":
@@ -90,6 +101,8 @@ def analyze(events: list[dict[str, str]], spray_threshold: int) -> dict:
             success_by_ip[event["ip"]].append(event)
 
     indicators: list[str] = []
+    correlation_details: list[dict] = []
+    success_window = timedelta(minutes=success_window_minutes)
 
     for source_ip, failures in failed_by_ip.items():
         unique_users = sorted({event["user"] for event in failures})
@@ -101,21 +114,55 @@ def analyze(events: list[dict[str, str]], spray_threshold: int) -> dict:
                 f"({', '.join(unique_users)})."
             )
 
-        if source_ip in success_by_ip:
+        for success in success_by_ip.get(source_ip, []):
+            qualifying_failures = [
+                failure
+                for failure in failures
+                if failure["event_time"] < success["event_time"]
+                and success["event_time"] - failure["event_time"] <= success_window
+            ]
+
+            if not qualifying_failures:
+                continue
+
+            first_failure = min(
+                qualifying_failures,
+                key=lambda event: event["event_time"],
+            )
+            elapsed = success["event_time"] - first_failure["event_time"]
+            elapsed_seconds = int(elapsed.total_seconds())
+
             indicators.append(
                 f"Failed-then-success pattern: {source_ip} had "
-                f"{len(failures)} failed attempt(s) and "
-                f"{len(success_by_ip[source_ip])} successful login(s)."
+                f"{len(qualifying_failures)} failed attempt(s) before a successful "
+                f"login within {success_window_minutes} minute(s) "
+                f"(elapsed {elapsed_seconds} seconds)."
+            )
+
+            correlation_details.append(
+                {
+                    "source_ip": source_ip,
+                    "failure_count": len(qualifying_failures),
+                    "first_failure": first_failure,
+                    "success": success,
+                    "elapsed_seconds": elapsed_seconds,
+                }
             )
 
     return {
         "failed_by_ip": failed_by_ip,
         "success_by_ip": success_by_ip,
         "indicators": indicators,
+        "correlation_details": correlation_details,
     }
 
 
-def print_report(path: Path, events: list[dict[str, str]], analysis: dict) -> None:
+def print_report(
+    path: Path,
+    events: list[dict],
+    analysis: dict,
+    success_window_minutes: int,
+) -> None:
     failures = [e for e in events if e["event_type"] == "authentication_failure"]
     successes = [e for e in events if e["event_type"] == "authentication_success"]
 
@@ -126,6 +173,7 @@ def print_report(path: Path, events: list[dict[str, str]], analysis: dict) -> No
     print(f"Parsed events: {len(events)}")
     print(f"Failed authentications: {len(failures)}")
     print(f"Successful authentications: {len(successes)}")
+    print(f"Failed-then-success window: {success_window_minutes} minute(s)")
     print()
 
     if events:
@@ -190,6 +238,15 @@ def build_parser() -> argparse.ArgumentParser:
         default=4,
         help="Unique failed usernames from one source required to flag possible spraying (default: 4).",
     )
+    parser.add_argument(
+        "--success-window-minutes",
+        type=int,
+        default=10,
+        help=(
+            "Maximum time between a failed authentication and later success "
+            "from the same source IP (default: 10)."
+        ),
+    )
     return parser
 
 
@@ -200,12 +257,24 @@ def main() -> None:
     if args.spray_threshold < 1:
         parser.error("--spray-threshold must be at least 1")
 
+    if args.success_window_minutes < 1:
+        parser.error("--success-window-minutes must be at least 1")
+
     if not args.log_file.exists():
         parser.error(f"log file not found: {args.log_file}")
 
     events = parse_log(args.log_file)
-    analysis = analyze(events, args.spray_threshold)
-    print_report(args.log_file, events, analysis)
+    analysis = analyze(
+        events,
+        args.spray_threshold,
+        args.success_window_minutes,
+    )
+    print_report(
+        args.log_file,
+        events,
+        analysis,
+        args.success_window_minutes,
+    )
 
 
 if __name__ == "__main__":
