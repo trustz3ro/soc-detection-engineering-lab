@@ -114,3 +114,26 @@ Useful tuning fields:
 - time of day
 - approved administrative accounts
 - change-ticket reference
+
+
+## Validation Result
+
+The detector passed both the live negative-control test and the safe synthetic positive test.
+
+Negative control:
+
+```text
+No additions to the local Administrators group detected in the last 30 minutes.
+```
+
+Synthetic positive test:
+
+```text
+ALERT: Account added to privileged local group.
+Actor: Ed_T14\\ej975
+MemberName: LAB\\testuser
+TargetGroup: Builtin\\Administrators
+ValidationMode: Synthetic
+```
+
+This confirms the rule correctly identifies a simulated Event ID 4732 addition to the local Administrators group.
