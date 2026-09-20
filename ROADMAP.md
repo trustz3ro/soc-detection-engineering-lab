@@ -42,16 +42,24 @@ Completed cases:
 - Incident 002 — Privileged Local Group Membership Change
 
 ## Phase 5 - Automation and Enrichment
-**Status: Starting**
+**Status: Complete**
 - Build Python utilities for parsing and summarizing logs
-- Extract useful fields such as timestamp, user, host, source IP, and event type
-- Add simple IOC or indicator enrichment
+- Extract timestamp, user, host, source IP, source port, and event type
+- Detect password spraying
+- Correlate failed authentications followed by success within a configurable time window
+- Add local IOC enrichment
+- Perform reverse-DNS and domain-resolution lookups
 - Generate repeatable investigation output
-- Document inputs, outputs, assumptions, and limitations
+- Document inputs, outputs, assumptions, limitations, and example results
+
+Validated utilities:
+- `scripts/analyze_auth_logs.py`
+- `scripts/enrich_ioc.py`
 
 ## Phase 6 - Portfolio Polish
-**Status: Planned**
+**Status: Starting**
 - Add evidence and diagrams
-- Refine detection write-ups
+- Refine detection and investigation write-ups
 - Add resume-ready project bullets
+- Improve project presentation for recruiters and hiring managers
 - Link the project from the GitHub profile README
