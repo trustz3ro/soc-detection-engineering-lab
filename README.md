@@ -164,7 +164,7 @@ flowchart LR
 - Phase 3 — Endpoint / Process Detections: **Complete**
 - Phase 4 — Incident Investigations: **Complete**
 - Phase 5 — Automation and Enrichment: **Complete**
-- Phase 6 — Portfolio Polish: **In Progress**
+- Phase 6 — Portfolio Polish: **Complete**
 - SIEM ingestion: **Planned**
 
 ## Author
