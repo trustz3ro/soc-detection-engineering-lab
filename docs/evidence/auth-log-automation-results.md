@@ -71,3 +71,56 @@ This preserves the analyst's role in validating context, intent, timing, and sur
 The failed-then-success indicator currently checks whether the same source IP has both failed and successful events in the input dataset.
 
 A future improvement should explicitly verify that the successful event occurred **after** the failures within a defined time window.
+
+
+## Time-Window Correlation Validation
+
+The authentication analyzer was retested after adding ordered time-window correlation.
+
+### Test 1 — Failed Logins Followed by Success
+
+Observed result:
+
+```text
+Parsed events: 4
+Failed authentications: 3
+Successful authentications: 1
+Failed-then-success window: 10 minute(s)
+
+Indicators:
+  - Failed-then-success pattern: 192.0.2.10 had 3 failed attempt(s) before a successful login within 10 minute(s) (elapsed 13 seconds).
+```
+
+This confirms that the detector now verifies:
+- failures occurred before the success
+- the success occurred within the configured 10-minute window
+- elapsed time is calculated and reported
+
+### Test 2 — Password Spray
+
+Observed result:
+
+```text
+Parsed events: 5
+Failed authentications: 5
+Successful authentications: 0
+Failed-then-success window: 10 minute(s)
+
+Indicators:
+  - Possible password spray: 198.51.100.25 targeted 5 unique usernames (admin, edwardjohnson, guest, root, support).
+```
+
+The password-spray detection continued to work correctly and did not generate a failed-then-success indicator because no successful authentication was present.
+
+## Validation Outcome
+
+The upgraded analyzer passed both tests.
+
+Current validated capabilities now include:
+- SSH authentication parsing
+- source IP classification
+- password-spray detection
+- ordered failed-then-success correlation
+- configurable correlation window
+- elapsed-time reporting
+- readable investigation timeline
