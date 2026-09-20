@@ -57,9 +57,19 @@ Validated utilities:
 - `scripts/enrich_ioc.py`
 
 ## Phase 6 - Portfolio Polish
-**Status: Starting**
-- Add evidence and diagrams
-- Refine detection and investigation write-ups
-- Add resume-ready project bullets
-- Improve project presentation for recruiters and hiring managers
-- Link the project from the GitHub profile README
+**Status: Complete**
+- Added architecture and workflow diagrams
+- Improved the repository landing page for fast recruiter review
+- Organized and surfaced strong evidence
+- Added recruiter-friendly project summary
+- Added resume-ready project bullets
+- Featured the project from the GitHub profile README
+
+## Next Expansion
+
+Planned future work:
+- select and deploy a SIEM/log platform
+- centralize Windows and Linux telemetry
+- convert current detection logic into SIEM-native detections
+- expand endpoint and identity coverage
+- add additional incident investigations using centralized telemetry
