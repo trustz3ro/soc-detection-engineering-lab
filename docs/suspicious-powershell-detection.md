@@ -104,3 +104,48 @@ Primary mapping:
 - **T1059.001 — Command and Scripting Interpreter: PowerShell**
 
 Depending on the observed command, additional mappings may apply, but they should be based on the actual behavior rather than assigned automatically.
+
+
+## Validation Result
+
+The first live validation successfully triggered on the controlled PowerShell command.
+
+Observed alert:
+
+```text
+ALERT: Suspicious PowerShell execution detected.
+Image: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+CommandLine: powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Write-Output 'SOC-LAB-TEST'"
+Indicators: Execution policy bypass
+Indicator count: 1
+```
+
+Earlier test activity using `-WindowStyle Hidden` was also still inside the detector's lookback window, so those historical events were returned as additional alerts.
+
+### Detector Self-Alert Lesson
+
+The initial detector invocation itself used:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File ".\scripts\detect_suspicious_powershell.ps1"
+```
+
+Because the detection logic looks for `ExecutionPolicy Bypass`, it correctly matched its own command line.
+
+This is a useful detection-engineering lesson: **a technically correct rule can still create an operational false positive**.
+
+The detector was updated to exclude only its own script invocation:
+
+```text
+detect_suspicious_powershell.ps1
+```
+
+This keeps the broader `ExecutionPolicy Bypass` detection intact for other PowerShell activity.
+
+The script now also accepts a configurable lookback period:
+
+```powershell
+.\scripts\detect_suspicious_powershell.ps1 -LookbackMinutes 1
+```
+
+This makes controlled testing cleaner by limiting results to very recent telemetry.
