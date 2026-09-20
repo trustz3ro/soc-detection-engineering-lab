@@ -66,13 +66,14 @@ When an alert fires, review:
 A benign lab command can be used to generate a detectable process without downloading or executing malicious content:
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -Command "Write-Output 'SOC-LAB-TEST'"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Write-Output 'SOC-LAB-TEST'"
 ```
 
-Expected indicators:
+Expected indicator:
 
 - Execution policy bypass
-- Hidden window
+
+The earlier hidden-window test was removed from the primary validation procedure after it caused PowerShell session instability on the lab endpoint. Hidden-window detection remains in the rule logic, but it is not required for the controlled test.
 
 ## False Positives
 
