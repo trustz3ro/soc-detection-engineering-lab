@@ -10,6 +10,8 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from pathlib import Path
 
+from enrich_ioc import enrich_ip
+
 EVENT_PATTERN = re.compile(
     r"^(?P<timestamp>\w{3}\s+\d+\s+\d{2}:\d{2}:\d{2})\s+"
     r"(?P<host>\S+)\s+sshd\[\d+\]:\s+"
@@ -157,11 +159,29 @@ def analyze(
     }
 
 
+def print_source_enrichment(source_ips: list[str]) -> None:
+    print("Source IP enrichment:")
+    for source_ip in source_ips:
+        try:
+            result = enrich_ip(source_ip)
+        except ValueError:
+            print(f"  - {source_ip}: unable to parse as an IP address")
+            continue
+
+        print(f"  - {source_ip}")
+        print(f"      Classification: {result.classification}")
+        print(f"      Reverse DNS: {result.reverse_dns or 'None'}")
+        for note in result.notes:
+            print(f"      Note: {note}")
+    print()
+
+
 def print_report(
     path: Path,
     events: list[dict],
     analysis: dict,
     success_window_minutes: int,
+    enrich_sources: bool,
 ) -> None:
     failures = [e for e in events if e["event_type"] == "authentication_failure"]
     successes = [e for e in events if e["event_type"] == "authentication_success"]
@@ -175,6 +195,8 @@ def print_report(
     print(f"Successful authentications: {len(successes)}")
     print(f"Failed-then-success window: {success_window_minutes} minute(s)")
     print()
+
+    source_ips: list[str] = []
 
     if events:
         hosts = sorted({event["host"] for event in events})
@@ -193,6 +215,9 @@ def print_report(
         for source_ip in source_ips:
             print(f"  - {source_ip} ({classify_ip(source_ip)})")
         print()
+
+    if enrich_sources and source_ips:
+        print_source_enrichment(source_ips)
 
     print("Event timeline:")
     if not events:
@@ -218,7 +243,7 @@ def print_report(
     print()
     print("Analyst note:")
     print(
-        "  Indicators are triage signals, not proof of malicious activity. "
+        "  Indicators and enrichment are triage context, not proof of malicious activity. "
         "Validate source, timing, account context, and surrounding telemetry."
     )
 
@@ -247,6 +272,11 @@ def build_parser() -> argparse.ArgumentParser:
             "from the same source IP (default: 10)."
         ),
     )
+    parser.add_argument(
+        "--enrich-sources",
+        action="store_true",
+        help="Run local IOC enrichment and reverse-DNS lookup for observed source IPs.",
+    )
     return parser
 
 
@@ -274,6 +304,7 @@ def main() -> None:
         events,
         analysis,
         args.success_window_minutes,
+        args.enrich_sources,
     )
 
 
