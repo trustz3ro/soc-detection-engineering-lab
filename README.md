@@ -8,40 +8,37 @@ Build a small Security Operations Center (SOC) lab that collects Windows and Lin
 
 ## Current Milestone
 
-**Phase 3 — Endpoint / Process Detections: Complete**
+**Phase 4 — Incident Investigations: Complete**
 
-The lab now includes validated authentication detections plus three endpoint-focused detections:
+The lab now includes validated authentication and endpoint detections plus two complete incident investigations.
 
-1. **Suspicious PowerShell execution**
-   - Uses Sysmon Event ID 1
-   - Reviews PowerShell command lines for higher-risk indicators
-   - Includes self-alert suppression and configurable lookback
+### Completed Incident Investigations
 
-2. **Suspicious Office parent/child process relationship**
-   - Uses Sysmon Event ID 1
-   - Detects Office-style parent processes launching scripting interpreters or selected LOLBins
-   - Includes a safe synthetic validation mode
+1. **Suspicious PowerShell Activity**
+   - Correlated Sysmon Event IDs 1, 22, and 3
+   - Tracked one PowerShell process with a shared ProcessGuid
+   - Built a process -> DNS -> network timeline
+   - Final disposition: Benign Positive
 
-3. **Privileged local group membership change**
-   - Uses Windows Security Event ID 4732
-   - Detects additions to the local Administrators group
-   - Includes a safe synthetic validation mode
+2. **Privileged Local Group Membership Change**
+   - Validated a synthetic Event ID 4732 alert
+   - Compared the alert against real local Administrators membership
+   - Verified no real Event ID 4732 occurred
+   - Reviewed nearby 4624 logon activity
+   - Final disposition: Benign Positive / Synthetic Test
 
-Authentication detections also include:
-- repeated failed SSH logins followed by a successful login
-- password spraying across multiple usernames
-- native Linux authentication validation
-- native Windows OpenSSH authentication validation
+## Validated Detections
 
-## Example Detection Output
+### Authentication
+- Repeated failed SSH logins followed by success
+- Password spraying across multiple usernames
+- Native Linux authentication detection
+- Native Windows OpenSSH password-spray detection
 
-```text
-ALERT: Suspicious PowerShell execution detected.
-User: Ed_T14\ej975
-Image: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
-Indicators: Execution policy bypass
-Indicator count: 1
-```
+### Endpoint / Process
+- Suspicious PowerShell execution
+- Suspicious Office parent/child process relationship
+- Privileged local Administrators group membership change
 
 ## Skills Demonstrated
 
@@ -56,15 +53,16 @@ Indicator count: 1
 - Thresholding and lookback windows
 - False-positive analysis
 - MITRE ATT&CK mapping
+- Incident triage
+- Timeline construction
+- Scope and severity assessment
+- Disposition and remediation decisions
 - Python log parsing
 - PowerShell detection scripting
 - Git/GitHub project workflow
 - Technical documentation
-- SOC triage concepts
 
 ## Lab Environment
-
-Current lab:
 
 ```text
 Mac mini
@@ -82,43 +80,6 @@ Mac mini
                  +--> PowerShell detections
 ```
 
-Planned telemetry architecture:
-
-```text
-Windows Endpoint + Sysmon ----\
-                              \
-Windows Server ----------------> SIEM / Log Platform ---> Detection Rules ---> Alerts ---> Investigation
-                              /
-Linux Endpoint ---------------/
-```
-
-## Implemented Detections
-
-### Authentication
-
-- `scripts/detect_auth_pattern.py`
-- `scripts/detect_password_spray.py`
-- `scripts/detect_linux_auth.py`
-- `scripts/detect_windows_ssh_spray.ps1`
-
-### Endpoint / Process
-
-- `scripts/detect_suspicious_powershell.ps1`
-- `scripts/detect_suspicious_parent_child.ps1`
-- `scripts/detect_admin_group_addition.ps1`
-
-## Evidence and Documentation
-
-Detection documentation is stored under:
-
-- `docs/`
-- `docs/evidence/`
-
-Learning notes include:
-
-- `docs/learning-notes-authentication-detection.md`
-- `docs/learning-notes-sysmon.md`
-
 ## Investigation Workflow
 
 1. Alert generated
@@ -127,39 +88,36 @@ Learning notes include:
 4. Review surrounding authentication and process activity
 5. Correlate related events
 6. Map behavior to MITRE ATT&CK
-7. Determine severity and disposition
-8. Document findings and recommended remediation
+7. Determine scope and severity
+8. Assign a disposition
+9. Document remediation and lessons learned
 
 ## Repository Structure
 
-- `docs/` — detection documentation, learning notes, evidence, architecture, and workflows
+- `docs/` — detection documentation, learning notes, summaries, and evidence
 - `data/sample-logs/` — sanitized synthetic authentication data
-- `scripts/` — Python and PowerShell detection utilities
-- `detections/` — future SIEM/detection-rule content
-- `incidents/` — incident investigation reports and templates
+- `scripts/` — Python and PowerShell detection and investigation utilities
+- `incidents/` — completed incident reports and templates
 - `configs/` — lab configurations such as Sysmon
+- `detections/` — future SIEM/detection-rule content
 - `evidence/` — future screenshots and visual lab evidence
-
-## Project Roadmap
-
-See [ROADMAP.md](ROADMAP.md) for the full implementation plan.
 
 ## Current Status
 
 - **Repository and architecture planning:** Complete
-- **Authentication detection prototypes:** Complete
+- **Authentication detections:** Complete
 - **Native Linux authentication validation:** Complete
 - **Native Windows OpenSSH validation:** Complete
 - **Windows Sysmon telemetry validation:** Complete
 - **Endpoint / process detections:** 3 validated
 - **MITRE ATT&CK mapping:** Documented for current detections
-- **Incident investigations:** Starting
+- **Incident investigations:** 2 complete
+- **Phase 5 automation and enrichment:** Starting
 - **SIEM ingestion:** Planned
-- **Python enrichment/automation:** Planned
 
 ## Portfolio Goal
 
-This project demonstrates practical SOC and detection-engineering skills through working code, reproducible test data, native Windows and Linux telemetry, documented detection logic, ATT&CK mapping, tuning decisions, and validation evidence.
+This project demonstrates practical SOC and detection-engineering skills through working code, reproducible test data, native Windows and Linux telemetry, documented detection logic, ATT&CK mapping, tuning decisions, event correlation, incident investigation, and validation evidence.
 
 ## Author
 
