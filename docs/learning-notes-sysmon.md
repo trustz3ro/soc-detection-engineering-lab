@@ -263,3 +263,53 @@ Next:
 10. Generate and review a DNS query.
 11. Validate Sysmon Event ID 22.
 12. Build a detection around suspicious PowerShell activity.
+
+
+## Event ID 3 Follow-Up — Isolating the GitHub HTTPS Connection
+
+Filtering the network telemetry by destination IP and destination port successfully isolated the exact connection created by:
+
+```powershell
+Test-NetConnection github.com -Port 443
+```
+
+Observed Sysmon Event ID 3 fields:
+
+```text
+Image: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+User: Ed_T14\ej975
+Protocol: tcp
+Initiated: true
+SourceIp: 192.168.4.20
+SourcePort: 63309
+DestinationIp: 140.82.114.4
+DestinationPort: 443
+DestinationPortName: https
+```
+
+### Why This Matters
+
+This event ties together three important pieces of evidence:
+
+1. **Process** — PowerShell made the connection.
+2. **User** — the connection ran in the `Ed_T14\ej975` context.
+3. **Network destination** — the process connected to `140.82.114.4` over TCP/443.
+
+This is the type of correlation a SOC analyst uses during investigations.
+
+For example:
+
+```text
+Process Creation (Event ID 1)
+        |
+        v
+powershell.exe
+        |
+        v
+Network Connection (Event ID 3)
+        |
+        v
+140.82.114.4:443
+```
+
+The same filtered results also showed other legitimate HTTPS activity from Brave, Git, Microsoft Defender, and Windows applications. This demonstrates why analysts should avoid treating port 443 by itself as suspicious. The process, user, destination, timing, and surrounding activity all matter.
