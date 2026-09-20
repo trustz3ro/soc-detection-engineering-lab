@@ -51,6 +51,7 @@ Useful fields include:
 - User
 - ProcessId
 - ProcessGuid
+- IntegrityLevel
 - Hashes
 
 Example use case:
@@ -88,21 +89,95 @@ Example use case:
 
 Identify suspicious or unexpected domain lookups.
 
+## Event ID 1 Validation — Notepad Test
+
+A controlled process-creation test was performed by running:
+
+```powershell
+notepad.exe
+```
+
+Sysmon immediately generated Event ID 1 records.
+
+Important observed fields included:
+
+- **Image** — the executable that actually ran
+- **CommandLine** — how the process was launched
+- **CurrentDirectory** — the working directory at launch
+- **User** — the account that started the process
+- **IntegrityLevel** — the privilege level of the process
+- **Hashes** — SHA256 hash of the executable
+- **ParentImage** — the executable that launched the new process
+- **ParentCommandLine** — how the parent process was started
+- **ProcessId / ProcessGuid** — identifiers used to track and correlate the process
+
+### Observed Notepad Process Chain
+
+One event showed:
+
+```text
+CommandLine: "C:\Windows\system32\notepad.exe"
+User: Ed_T14\ej975
+IntegrityLevel: High
+ParentImage: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+```
+
+This tells us that PowerShell launched Notepad.
+
+A second Event ID 1 appeared almost immediately for the packaged Windows Notepad application, where the first Notepad process became the parent of another Notepad process.
+
+That is a useful lesson: **one user action can produce multiple process-creation events**.
+
+Analysts should follow parent/child relationships instead of assuming every process event represents a separate user action.
+
+### Why Parent/Child Relationships Matter
+
+Parent/child process relationships help answer questions such as:
+
+- What launched this program?
+- Was PowerShell involved?
+- Did a browser launch a script interpreter?
+- Did Office launch PowerShell or cmd.exe?
+- Did one suspicious process spawn another?
+
+A normal chain might look like:
+
+```text
+powershell.exe
+    -> notepad.exe
+```
+
+A more suspicious chain could look like:
+
+```text
+winword.exe
+    -> powershell.exe
+        -> cmd.exe
+```
+
+The second example would deserve investigation because Office applications normally should not be spawning script interpreters without a clear reason.
+
 ## Why Start Small
 
 A very broad Sysmon configuration can generate large amounts of telemetry.
 
 For learning, we are starting with three event types so each one can be understood and tested before adding more advanced coverage.
 
-## Next Lab Steps
+## Current Progress
+
+Completed:
 
 1. Install Sysmon with the lab configuration.
 2. Verify the Sysmon service is running.
 3. Confirm the Operational event log exists.
-4. Generate a test process.
-5. Review Event ID 1.
-6. Generate a network event.
-7. Review Event ID 3.
-8. Generate a DNS query.
-9. Review Event ID 22.
-10. Build a detection around suspicious PowerShell activity.
+4. Generate a controlled test process.
+5. Validate Sysmon Event ID 1.
+6. Review process image, command line, user, integrity, hash, and parent process fields.
+
+Next:
+
+7. Generate a network event.
+8. Review Event ID 3.
+9. Generate a DNS query.
+10. Review Event ID 22.
+11. Build a detection around suspicious PowerShell activity.
