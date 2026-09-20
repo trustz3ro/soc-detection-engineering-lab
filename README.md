@@ -1,154 +1,171 @@
 # SOC Detection Engineering Lab
 
-A hands-on cybersecurity portfolio project focused on security monitoring, authentication analytics, endpoint telemetry, detection engineering, incident investigation, automation, enrichment, and response workflows.
+Hands-on blue-team portfolio project demonstrating detection engineering, Windows/Linux telemetry analysis, incident investigation, and SOC automation.
 
-## Project Objective
+## At a Glance
 
-Build a small Security Operations Center (SOC) lab that collects Windows and Linux telemetry, generates controlled security events, detects suspicious behavior, automates repetitive analysis, and documents the investigation process.
+| Area | What I Built |
+| --- | --- |
+| Authentication detections | SSH failed-login, failed-then-success, and password-spray analytics |
+| Endpoint detections | Suspicious PowerShell, Office parent/child behavior, privileged-group changes |
+| Windows telemetry | Sysmon Event IDs 1, 3, 22; Security Event IDs 4624, 4625, 4732 |
+| Linux telemetry | Native OpenSSH authentication logs |
+| Investigations | Two documented incidents with timelines, scope, disposition, and remediation |
+| Automation | Python authentication analyzer with time-window correlation |
+| Enrichment | IP/domain classification, DNS resolution, reverse DNS |
+| ATT&CK | Technique mappings documented for current detections |
 
-## Current Milestone
+## Architecture
 
-**Phase 5 — Automation and Enrichment: Complete**
+```mermaid
+flowchart LR
+    M[Mac mini] --> U[OrbStack Ubuntu]
+    M --> T[Tailscale]
+    T --> W[Windows ThinkPad]
 
-The lab now includes validated authentication and endpoint detections, two complete incident investigations, and Python-based investigation automation.
+    U --> L[Linux auth.log]
+    L --> P1[Python Auth Detections]
 
-### Completed Incident Investigations
+    W --> O[Windows OpenSSH]
+    W --> S[Sysmon]
+    W --> SEC[Windows Security Log]
 
-1. **Suspicious PowerShell Activity**
-   - Correlated Sysmon Event IDs 1, 22, and 3
-   - Tracked one PowerShell process with a shared ProcessGuid
-   - Built a process -> DNS -> network timeline
-   - Final disposition: Benign Positive
+    O --> P2[SSH Spray Detection]
+    S --> D1[PowerShell Detection]
+    S --> D2[Parent/Child Detection]
+    SEC --> D3[Privileged Group Detection]
 
-2. **Privileged Local Group Membership Change**
-   - Validated a synthetic Event ID 4732 alert
-   - Compared the alert against real local Administrators membership
-   - Verified no real Event ID 4732 occurred
-   - Reviewed nearby 4624 logon activity
-   - Final disposition: Benign Positive / Synthetic Test
+    P1 --> I[Investigation]
+    P2 --> I
+    D1 --> I
+    D2 --> I
+    D3 --> I
 
-## Validated Detections
+    I --> A[Python Automation]
+    A --> E[IOC Enrichment]
+    E --> R[Analyst Report / Disposition]
+```
+
+Detailed architecture and workflow: [docs/architecture.md](docs/architecture.md)
+
+## Highlighted Results
+
+### Suspicious PowerShell Investigation
+A controlled PowerShell process was correlated across:
+
+```text
+Sysmon Event ID 1  -> Process creation
+Sysmon Event ID 22 -> github.com DNS lookup
+Sysmon Event ID 3  -> TCP/443 connection
+```
+
+The same ProcessGuid linked the process, DNS, and network telemetry into one timeline.
+
+[View Incident 001](incidents/incident-001-suspicious-powershell.md)
+
+### Privileged Group Investigation
+A synthetic Event ID 4732-style alert was validated against the real endpoint state.
+
+The investigation confirmed:
+- the synthetic account was not in the local Administrators group
+- no real Event ID 4732 occurred
+- surrounding 4624 events were normal SYSTEM service logons
+
+[View Incident 002](incidents/incident-002-privileged-group-change.md)
+
+### Authentication Automation
+The Python analyzer identifies both password spraying and failed-logins-followed-by-success.
+
+Validated example:
+
+```text
+3 failed attempts
+-> 1 successful login
+-> same source IP
+-> 13 seconds elapsed
+-> inside configured 10-minute window
+```
+
+It can also enrich observed source IPs during the same run.
+
+[View automation documentation](docs/auth-log-automation.md)
+
+## Detection Coverage
 
 ### Authentication
-- Repeated failed SSH logins followed by success
+- Repeated failed SSH logins
+- Failed authentication followed by success
 - Password spraying across multiple usernames
-- Native Linux authentication detection
-- Native Windows OpenSSH password-spray detection
+- Native Linux OpenSSH validation
+- Native Windows OpenSSH validation
 
 ### Endpoint / Process
-- Suspicious PowerShell execution
-- Suspicious Office parent/child process relationship
-- Privileged local Administrators group membership change
+- Suspicious PowerShell command-line indicators
+- Suspicious Office parent/child execution
+- Privileged local Administrators group additions
 
-## Automation and Enrichment
+## Core Scripts
 
-### Authentication Analyzer
+| Script | Purpose |
+| --- | --- |
+| `detect_auth_pattern.py` | Failed-login / success pattern detection |
+| `detect_password_spray.py` | Password-spray detection |
+| `detect_linux_auth.py` | Native Linux authentication analysis |
+| `detect_windows_ssh_spray.ps1` | Windows OpenSSH spray detection |
+| `detect_suspicious_powershell.ps1` | Suspicious PowerShell detection |
+| `detect_suspicious_parent_child.ps1` | Parent/child process detection |
+| `detect_admin_group_addition.ps1` | Privileged-group change detection |
+| `collect_sysmon_timeline.ps1` | Sysmon event correlation |
+| `analyze_auth_logs.py` | Authentication analysis and time-window correlation |
+| `enrich_ioc.py` | Lightweight IOC enrichment |
 
-`scripts/analyze_auth_logs.py`
+## Evidence
 
-Capabilities:
-- parses supported OpenSSH authentication logs
-- extracts timestamp, host, username, source IP, source port, and event type
-- summarizes failed and successful authentication activity
-- detects password-spray behavior
-- correlates failures followed by success within a configurable time window
-- calculates elapsed time
-- optionally enriches observed source IPs in the same investigation run
+Start here for validated results:
 
-### IOC Enrichment Utility
-
-`scripts/enrich_ioc.py`
-
-Capabilities:
-- accepts IPv4, IPv6, and domain indicators
-- classifies documentation/test, RFC1918, loopback, link-local, multicast, unspecified, and public IPs
-- performs reverse DNS for IP addresses when available
-- resolves domains to current IP addresses
-- produces analyst-focused context without assigning malicious/benign verdicts
+- [Authentication automation results](docs/evidence/auth-log-automation-results.md)
+- [IOC enrichment results](docs/evidence/ioc-enrichment-results.md)
+- [Windows OpenSSH password spray test](docs/evidence/windows-openssh-spray-test.md)
+- [Suspicious PowerShell test](docs/evidence/suspicious-powershell-test.md)
+- [Suspicious parent/child test](docs/evidence/suspicious-parent-child-test.md)
+- [Privileged group test](docs/evidence/privileged-group-test.md)
 
 ## Skills Demonstrated
 
-- Security monitoring and log analysis
-- Linux authentication log analysis
-- Windows OpenSSH telemetry analysis
-- Windows Security event analysis
-- Sysmon Event IDs 1, 3, and 22
-- Process and parent/child relationship analysis
-- DNS and network-event correlation
-- Detection engineering and tuning
-- Thresholding and lookback windows
-- False-positive analysis
-- MITRE ATT&CK mapping
-- Incident triage
-- Timeline construction
-- Scope and severity assessment
-- Disposition and remediation decisions
-- Python log parsing and automation
-- Time-window event correlation
-- IOC enrichment
-- Reverse DNS
-- PowerShell detection scripting
-- Git/GitHub project workflow
-- Technical documentation
-
-## Lab Environment
-
-```text
-Mac mini
-   |
-   +--> OrbStack Ubuntu
-   |      +--> Linux auth.log
-   |      +--> Python detections
-   |
-   +--> Tailscale network
-          |
-          +--> Windows ThinkPad
-                 +--> OpenSSH
-                 +--> Windows Security log
-                 +--> Sysmon
-                 +--> PowerShell detections
-```
+Security monitoring • Detection engineering • Sysmon • Windows Event Logs • Linux auth logs • PowerShell • Python • SSH telemetry • Process analysis • DNS/network correlation • MITRE ATT&CK • Incident triage • Timeline analysis • False-positive tuning • IOC enrichment • Git/GitHub
 
 ## Investigation Workflow
 
-1. Alert generated
-2. Validate event source and timestamp
-3. Identify affected user and host
-4. Review surrounding authentication and process activity
-5. Correlate related events
-6. Enrich relevant indicators
-7. Map behavior to MITRE ATT&CK
-8. Determine scope and severity
-9. Assign a disposition
-10. Document remediation and lessons learned
+```mermaid
+flowchart LR
+    A[Alert] --> B[Validate]
+    B --> C[Identify User / Host]
+    C --> D[Correlate Events]
+    D --> E[Enrich Indicators]
+    E --> F[Determine Scope]
+    F --> G[Map ATT&CK]
+    G --> H[Assign Severity / Disposition]
+    H --> I[Document Remediation]
+```
 
-## Repository Structure
+## Project Documentation
 
-- `docs/` — detection documentation, learning notes, summaries, and evidence
-- `data/sample-logs/` — sanitized synthetic authentication data
-- `scripts/` — Python and PowerShell detection, investigation, automation, and enrichment utilities
-- `incidents/` — completed incident reports and templates
-- `configs/` — lab configurations such as Sysmon
-- `detections/` — future SIEM/detection-rule content
-- `evidence/` — future screenshots and visual lab evidence
+- [Phase 3 Summary](docs/phase-3-summary.md)
+- [Phase 4 Summary](docs/phase-4-summary.md)
+- [Phase 5 Summary](docs/phase-5-summary.md)
+- [Architecture & Workflow](docs/architecture.md)
+- [Recruiter Project Summary](docs/portfolio-summary.md)
+- [Resume-Ready Project Bullets](docs/resume-project-bullets.md)
+- [Roadmap](ROADMAP.md)
 
 ## Current Status
 
-- **Repository and architecture planning:** Complete
-- **Authentication detections:** Complete
-- **Native Linux authentication validation:** Complete
-- **Native Windows OpenSSH validation:** Complete
-- **Windows Sysmon telemetry validation:** Complete
-- **Endpoint / process detections:** 3 validated
-- **MITRE ATT&CK mapping:** Documented for current detections
-- **Incident investigations:** 2 complete
-- **Phase 5 automation and enrichment:** Complete
-- **Phase 6 portfolio polish:** Starting
-- **SIEM ingestion:** Planned
-
-## Portfolio Goal
-
-This project demonstrates practical SOC and detection-engineering skills through working code, reproducible test data, native Windows and Linux telemetry, documented detection logic, ATT&CK mapping, tuning decisions, event correlation, incident investigation, Python automation, and IOC enrichment.
+- Phase 2 — Authentication Detections: **Complete**
+- Phase 3 — Endpoint / Process Detections: **Complete**
+- Phase 4 — Incident Investigations: **Complete**
+- Phase 5 — Automation and Enrichment: **Complete**
+- Phase 6 — Portfolio Polish: **In Progress**
+- SIEM ingestion: **Planned**
 
 ## Author
 
