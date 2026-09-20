@@ -1,10 +1,8 @@
 param(
-    [int]$LookbackMinutes = 15
+    [int]$LookbackMinutes = 15,
+    [switch]$TestMode
 )
 
-$startTime = (Get-Date).AddMinutes(-$LookbackMinutes)
-
-# Suspicious child processes commonly seen when launched by Office applications.
 $suspiciousChildren = @(
     'powershell.exe',
     'pwsh.exe',
@@ -16,7 +14,6 @@ $suspiciousChildren = @(
     'regsvr32.exe'
 )
 
-# Office-style parent process names that are high-value for parent/child monitoring.
 $officeParents = @(
     'winword.exe',
     'excel.exe',
@@ -25,39 +22,43 @@ $officeParents = @(
     'onenote.exe'
 )
 
-$events = Get-WinEvent -FilterHashtable @{
-    LogName   = 'Microsoft-Windows-Sysmon/Operational'
-    Id        = 1
-    StartTime = $startTime
+$records = @()
+
+if ($TestMode) {
+    $records += [pscustomobject]@{
+        TimeCreated       = Get-Date
+        User              = 'LAB\student'
+        ParentImage       = 'C:\Program Files\Microsoft Office\root\Office16\WINWORD.EXE'
+        ParentCommandLine = '"C:\Program Files\Microsoft Office\root\Office16\WINWORD.EXE" C:\Lab\sample.docx'
+        Image             = 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
+        CommandLine       = 'powershell.exe -NoProfile -Command "Write-Output SOC-LAB-PARENT-CHILD-TEST"'
+        ProcessId         = '4242'
+        ProcessGuid       = '{00000000-0000-0000-0000-000000004242}'
+    }
 }
+else {
+    $startTime = (Get-Date).AddMinutes(-$LookbackMinutes)
 
-$alerts = @()
-
-foreach ($event in $events) {
-    [xml]$xml = $event.ToXml()
-    $data = @{}
-
-    foreach ($node in $xml.Event.EventData.Data) {
-        $data[$node.Name] = [string]$node.'#text'
+    $events = Get-WinEvent -FilterHashtable @{
+        LogName   = 'Microsoft-Windows-Sysmon/Operational'
+        Id        = 1
+        StartTime = $startTime
     }
 
-    $image = $data['Image']
-    $parentImage = $data['ParentImage']
+    foreach ($event in $events) {
+        [xml]$xml = $event.ToXml()
+        $data = @{}
 
-    if (-not $image -or -not $parentImage) {
-        continue
-    }
+        foreach ($node in $xml.Event.EventData.Data) {
+            $data[$node.Name] = [string]$node.'#text'
+        }
 
-    $childName = [System.IO.Path]::GetFileName($image).ToLower()
-    $parentName = [System.IO.Path]::GetFileName($parentImage).ToLower()
-
-    if (($officeParents -contains $parentName) -and ($suspiciousChildren -contains $childName)) {
-        $alerts += [pscustomobject]@{
+        $records += [pscustomobject]@{
             TimeCreated       = $event.TimeCreated
             User              = $data['User']
-            ParentImage       = $parentImage
+            ParentImage       = $data['ParentImage']
             ParentCommandLine = $data['ParentCommandLine']
-            Image             = $image
+            Image             = $data['Image']
             CommandLine       = $data['CommandLine']
             ProcessId         = $data['ProcessId']
             ProcessGuid       = $data['ProcessGuid']
@@ -65,8 +66,28 @@ foreach ($event in $events) {
     }
 }
 
+$alerts = @()
+
+foreach ($record in $records) {
+    if (-not $record.Image -or -not $record.ParentImage) {
+        continue
+    }
+
+    $childName = [System.IO.Path]::GetFileName($record.Image).ToLower()
+    $parentName = [System.IO.Path]::GetFileName($record.ParentImage).ToLower()
+
+    if (($officeParents -contains $parentName) -and ($suspiciousChildren -contains $childName)) {
+        $alerts += $record
+    }
+}
+
 if ($alerts.Count -eq 0) {
-    Write-Host "No suspicious Office parent/child process activity detected in the last $LookbackMinutes minutes."
+    if ($TestMode) {
+        Write-Host "Test mode completed: no suspicious parent/child relationship detected."
+    }
+    else {
+        Write-Host "No suspicious Office parent/child process activity detected in the last $LookbackMinutes minutes."
+    }
     exit
 }
 
@@ -80,5 +101,8 @@ foreach ($alert in ($alerts | Sort-Object TimeCreated -Descending)) {
     Write-Host "CommandLine: $($alert.CommandLine)"
     Write-Host "ProcessId: $($alert.ProcessId)"
     Write-Host "ProcessGuid: $($alert.ProcessGuid)"
+    if ($TestMode) {
+        Write-Host "ValidationMode: Synthetic"
+    }
     Write-Host ""
 }
