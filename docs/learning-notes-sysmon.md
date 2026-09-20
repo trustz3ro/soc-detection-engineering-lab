@@ -313,3 +313,112 @@ Network Connection (Event ID 3)
 ```
 
 The same filtered results also showed other legitimate HTTPS activity from Brave, Git, Microsoft Defender, and Windows applications. This demonstrates why analysts should avoid treating port 443 by itself as suspicious. The process, user, destination, timing, and surrounding activity all matter.
+
+
+## Event ID 22 Validation — DNS Query Telemetry
+
+Sysmon Event ID 22 successfully captured DNS activity on the Windows endpoint.
+
+Observed fields included:
+
+```text
+QueryName: settings-win.data.microsoft.com
+QueryStatus: 0
+Image: C:\Windows\System32\svchost.exe
+User: NT AUTHORITY\SYSTEM
+```
+
+Other examples included DNS activity from:
+
+- `OneDrive.exe`
+- `brave.exe`
+- `gamingservices.exe`
+- `Sysmon64.exe`
+
+### Important Fields
+
+- **QueryName** — domain name or reverse-DNS name being queried
+- **QueryStatus** — result status for the DNS request
+- **QueryResults** — returned CNAME, IPv4, IPv6, or PTR data when available
+- **Image** — process associated with the DNS query
+- **User** — account context for the querying process
+- **ProcessGuid / ProcessId** — identifiers used for correlation with other Sysmon events
+
+### QueryStatus
+
+A value of:
+
+```text
+QueryStatus: 0
+```
+
+indicates the query completed successfully.
+
+Some observed reverse-DNS lookups returned:
+
+```text
+QueryStatus: 9003
+QueryResults: -
+```
+
+which means the requested DNS name did not exist.
+
+### Reverse DNS
+
+Queries ending in:
+
+```text
+in-addr.arpa
+```
+
+are IPv4 reverse-DNS lookups.
+
+Queries ending in:
+
+```text
+ip6.arpa
+```
+
+are IPv6 reverse-DNS lookups.
+
+These attempt to map an IP address back to a hostname.
+
+### Why Event ID 22 Matters
+
+DNS telemetry is valuable because many network connections begin with name resolution.
+
+A useful investigation chain can look like:
+
+```text
+Process Creation — Event ID 1
+        |
+        v
+powershell.exe
+        |
+        v
+DNS Query — Event ID 22
+        |
+        v
+example.com
+        |
+        v
+Network Connection — Event ID 3
+        |
+        v
+remote IP:443
+```
+
+This lets an analyst connect **process execution**, **domain resolution**, and **network activity** into one timeline.
+
+### SOC Lesson
+
+A single endpoint generates a large amount of legitimate DNS traffic. A domain name by itself is not enough to determine whether an event is malicious.
+
+Analysts should consider:
+
+- which process made the request
+- which user ran the process
+- whether the domain is expected
+- whether the process later connected to the resolved address
+- timing and frequency
+- surrounding endpoint activity
