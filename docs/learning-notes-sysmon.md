@@ -70,6 +70,9 @@ Useful fields include:
 - DestinationIp
 - DestinationPort
 - Protocol
+- Initiated
+- User
+- ProcessId / ProcessGuid
 
 Example use case:
 
@@ -157,6 +160,84 @@ winword.exe
 
 The second example would deserve investigation because Office applications normally should not be spawning script interpreters without a clear reason.
 
+## Event ID 3 Validation — Network Connection Test
+
+A controlled connectivity test was run with:
+
+```powershell
+Test-NetConnection github.com -Port 443
+```
+
+The connectivity test succeeded:
+
+```text
+RemoteAddress: 140.82.114.4
+RemotePort: 443
+SourceAddress: 192.168.4.20
+TcpTestSucceeded: True
+```
+
+Sysmon Event ID 3 records were then reviewed.
+
+### What We Observed
+
+The newest events included DNS and local discovery traffic, including:
+
+- `svchost.exe` using UDP/53 to communicate with DNS resolvers such as `1.1.1.1` and `1.0.0.1`
+- `brave.exe` and `svchost.exe` generating multicast DNS traffic on UDP/5353
+- both IPv4 and IPv6 network events
+
+Example fields:
+
+```text
+Image: C:\Windows\System32\svchost.exe
+User: NT AUTHORITY\NETWORK SERVICE
+Protocol: udp
+SourceIp: 192.168.4.20
+DestinationIp: 1.1.1.1
+DestinationPort: 53
+```
+
+### Important Lesson
+
+The first 10 Event ID 3 records did **not necessarily show the exact GitHub TCP/443 connection** even though the connection test succeeded.
+
+This is normal in a busy endpoint log. Other network events can occur immediately before or after the test and push the specific event outside a small `-MaxEvents` result set.
+
+SOC analysts often filter by:
+
+- destination IP
+- destination port
+- process image
+- process ID
+- timestamp
+
+instead of only looking at the newest events.
+
+### Field Meanings
+
+- **Image** — process responsible for the connection
+- **User** — account context for that process
+- **Protocol** — TCP or UDP
+- **Initiated** — whether the process initiated the connection
+- **SourceIp / SourcePort** — local endpoint
+- **DestinationIp / DestinationPort** — remote endpoint
+- **ProcessGuid** — stable Sysmon identifier useful for correlating with Event ID 1
+
+### Why Event ID 3 Matters
+
+Event ID 3 lets an analyst connect process activity to network behavior.
+
+For example:
+
+```text
+powershell.exe
+    -> network connection
+        -> external IP on TCP/443
+```
+
+That relationship can become important during malware, command-and-control, download, or data-exfiltration investigations.
+
 ## Why Start Small
 
 A very broad Sysmon configuration can generate large amounts of telemetry.
@@ -173,11 +254,12 @@ Completed:
 4. Generate a controlled test process.
 5. Validate Sysmon Event ID 1.
 6. Review process image, command line, user, integrity, hash, and parent process fields.
+7. Generate network activity.
+8. Validate and review Sysmon Event ID 3.
 
 Next:
 
-7. Generate a network event.
-8. Review Event ID 3.
-9. Generate a DNS query.
-10. Review Event ID 22.
-11. Build a detection around suspicious PowerShell activity.
+9. Filter Event ID 3 to isolate the GitHub TCP/443 connection.
+10. Generate and review a DNS query.
+11. Validate Sysmon Event ID 22.
+12. Build a detection around suspicious PowerShell activity.
