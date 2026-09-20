@@ -1,0 +1,14 @@
+<Sysmon schemaversion="4.82">
+  <HashAlgorithms>SHA256</HashAlgorithms>
+
+  <EventFiltering>
+    <!-- Log all process creation events -->
+    <ProcessCreate onmatch="exclude" />
+
+    <!-- Log all network connection events -->
+    <NetworkConnect onmatch="exclude" />
+
+    <!-- Log all DNS query events -->
+    <DnsQuery onmatch="exclude" />
+  </EventFiltering>
+</Sysmon>
