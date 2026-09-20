@@ -57,3 +57,45 @@ Benign Positive
 ```
 
 The purpose is to practice a complete SOC investigation workflow using realistic telemetry.
+
+
+## Investigation Progress — Process-Only Test
+
+A controlled PowerShell event was generated:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Write-Output 'SOC-INCIDENT-001'"
+```
+
+The suspicious PowerShell detector alerted on:
+
+```text
+Time: 09/19/2026 19:56:36
+User: Ed_T14\ej975
+ProcessId: 9220
+ProcessGuid: {0c6a6533-2f44-6aaf-3308-000000005e00}
+Indicator: Execution policy bypass
+```
+
+The timeline collector was then filtered to that ProcessGuid.
+
+Observed correlated telemetry:
+
+```text
+Event ID 1 — Process Create
+ProcessId: 9220
+Image: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+CommandLine: powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Write-Output 'SOC-INCIDENT-001'"
+ParentImage: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+User: Ed_T14\ej975
+```
+
+No Event ID 22 DNS or Event ID 3 network records were associated with this ProcessGuid.
+
+### Analyst Interpretation
+
+This result is expected because the test command only printed local text and did not perform DNS resolution or establish a network connection.
+
+This is an important investigation lesson: **absence of DNS or network telemetry can be meaningful when it is consistent with the process behavior.**
+
+A second controlled test will intentionally perform a DNS lookup and HTTPS connectivity check from the same PowerShell process so the investigation can practice multi-event correlation.
