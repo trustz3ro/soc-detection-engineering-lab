@@ -92,3 +92,24 @@ Useful tuning fields:
 - user
 - host
 - time of day
+
+
+## Validation Result
+
+The detector passed both a negative-control test and a safe synthetic positive test.
+
+Negative control:
+
+```text
+No suspicious Office parent/child process activity detected in the last 15 minutes.
+```
+
+Synthetic positive test:
+
+```text
+ParentImage: C:\Program Files\Microsoft Office\root\Office16\WINWORD.EXE
+Image: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+ValidationMode: Synthetic
+```
+
+The rule correctly alerted on the simulated `WINWORD.EXE -> powershell.exe` relationship.
