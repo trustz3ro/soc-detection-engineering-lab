@@ -1,0 +1,6 @@
+source = `wazuh-alerts-4.x-*`
+| where `rule.id` = '100100' and `agent.name` = 'Ed_T14' and `timestamp` >= timestampadd(MINUTE, -5, now())
+| parse `data.win.eventdata.payload` 'Invalid user (?<username>[^ ]+) from .*'
+| parse `data.win.eventdata.payload` '.* from (?<sourceip>[^ ]+) port .*'
+| stats count() as attempts, distinct_count(username) as unique_users by sourceip
+| where unique_users >= 3
