@@ -4,7 +4,21 @@
 
 Centralize Windows and Linux security telemetry in Wazuh and reproduce existing detection logic as SIEM-native rules and queries.
 
-## Planned Architecture
+## Current deployment (September 26, 2026)
+
+- Wazuh 4.14.8 runs as a VirtualBox appliance on the ThinkPad.
+- The Windows Wazuh agent on ED_T14 sends OpenSSH/Operational events to the manager.
+- The Mac mini generated the controlled invalid-username SSH events from
+  Tailscale IP 100.127.218.101.
+- Rule 100100 alerts on individual invalid-user events. The five-minute PPL
+  query returned three distinct usernames from one source; a correlated
+  alert has not yet been validated.
+
+## Earlier proposed OrbStack architecture
+
+The following diagram records the earlier Mac mini deployment plan. It does
+not describe the current VirtualBox deployment.
+
 
 ```mermaid
 flowchart LR
