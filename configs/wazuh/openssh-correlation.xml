@@ -1,0 +1,8 @@
+<group name="local,windows,openssh,">
+  <rule id="100110" level="10">
+    <decoded_as>json</decoded_as>
+    <field name="integration">^openssh_distinct_user_correlation$</field>
+    <description>Windows OpenSSH: three or more distinct invalid usernames from one source within five minutes</description>
+    <group>authentication_failed,</group>
+  </rule>
+</group>
