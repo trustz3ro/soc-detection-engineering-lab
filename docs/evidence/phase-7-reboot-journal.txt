@@ -1,0 +1,8 @@
+Oct 16 01:36:07 wazuh-server python3[5510]: Emitted 0 correlation alert(s).
+Oct 16 01:36:23 wazuh-server python3[5513]: Emitted 0 correlation alert(s).
+Oct 16 01:36:39 wazuh-server python3[5520]: Emitted 0 correlation alert(s).
+Oct 16 01:36:55 wazuh-server python3[5525]: Emitted 0 correlation alert(s).
+Oct 16 01:37:11 wazuh-server python3[5531]: Emitted 1 correlation alert(s).
+Oct 16 01:37:27 wazuh-server python3[5536]: Emitted 0 correlation alert(s).
+Oct 16 01:37:43 wazuh-server python3[5539]: Emitted 0 correlation alert(s).
+Oct 16 01:37:59 wazuh-server python3[5546]: Emitted 0 correlation alert(s).

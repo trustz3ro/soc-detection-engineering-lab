@@ -165,9 +165,26 @@ flowchart LR
 - Phase 4 — Incident Investigations: **Complete**
 - Phase 5 — Automation and Enrichment: **Complete**
 - Phase 6 — Portfolio Polish: **Complete**
-- SIEM ingestion: **Planned**
+- SIEM ingestion and automated OpenSSH correlation: **Validated in lab**
 
 ## Author
 
 Edward Johnson  
 GitHub: [trustz3ro](https://github.com/trustz3ro)
+
+## Phase 7: Automated OpenSSH correlation
+
+Implemented a Python correlator that detects three distinct invalid
+usernames from one source IP against a Windows endpoint within five
+minutes. A systemd timer runs it approximately every 15 seconds after
+the previous run finishes, with persistent state and episode-based
+duplicate suppression.
+
+Validated with 17 automated tests on macOS and Wazuh Python 3.10,
+live positive and negative cases, and an end-to-end post-reboot test.
+Cached-event rotation handling passed automated testing; actual live
+rollover remains unobserved.
+
+- [Correlation test matrix](docs/phase-7-correlation-test-matrix.md)
+- [Automation and limitations](docs/openssh-correlation-automation.md)
+- [Reboot validation](docs/phase-7-reboot-validation.md)
