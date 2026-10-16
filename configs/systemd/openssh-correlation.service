@@ -1,0 +1,17 @@
+[Unit]
+Description=Correlate Windows OpenSSH invalid usernames
+After=wazuh-manager.service
+
+[Service]
+Type=oneshot
+User=root
+UMask=0027
+StateDirectory=openssh-correlation
+StateDirectoryMode=0750
+ExecStart=/var/ossec/framework/python/bin/python3 /opt/openssh-correlation/run_openssh_correlation.py --input /var/ossec/logs/alerts/alerts.json --state /var/lib/openssh-correlation/state.json --output /var/log/openssh-correlation.json
+TimeoutStartSec=60
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/openssh-correlation /var/log

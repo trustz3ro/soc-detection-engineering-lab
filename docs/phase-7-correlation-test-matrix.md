@@ -39,10 +39,12 @@ and Wazuh timestamp formatting.
 - [Multiple sources](evidence/phase-7-multiple-source-events.jsonl)
 - [Outside window](evidence/phase-7-outside-window-events.jsonl)
 
-## Current limitations
+## Automation follow-up
 
-Execution is manual. Repeated runs may emit duplicate results.
-The script currently reads only the current alerts.json file, so a
-five-minute window spanning daily rotation can miss earlier events.
-Automatic execution, duplicate suppression, and rollover handling
-remain pending.
+Automatic execution and episode-based duplicate suppression were validated
+October 15, 2026. All 17 tests passed on both environments.
+Cached-event rollover handling passed automated testing; actual live
+rollover remains unobserved.
+
+See [automation documentation](openssh-correlation-automation.md)
+for installation, evidence, rollback, and remaining limitations.
